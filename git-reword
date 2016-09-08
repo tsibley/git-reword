@@ -1,0 +1,56 @@
+#!/bin/bash
+set -e -o pipefail
+
+function usage() {
+    cat <<.
+usage: git reword <commit>
+       git reword --help
+
+Automatically performs an interactive rebase with the given commit
+selected for rewording.
+.
+}
+
+function init() {
+    commit="$1"
+
+    if [[ -z $commit ]]; then
+        printf "No commit specified\n\n" >&2
+        usage
+        exit 1
+    fi
+
+    # Normalize commit so we can reliably append "^"
+    commit="$(git rev-list -n 1 "$commit")"
+    GIT_SEQUENCE_EDITOR="$0 --filter" exec git rebase --interactive "$commit^"
+}
+
+function filter() {
+    exec perl -pi -e 's/^pick/reword/ if $. == 1' "$@"
+}
+
+mode=init
+
+for arg; do
+    case "$arg" in
+        --filter)
+            mode=filter
+            shift;;
+        -h|--help)
+            usage
+            exit 0;;
+        --)
+            shift
+            break;;
+    esac
+done
+
+case "$mode" in
+    init)
+        init "$@";;
+    filter)
+        filter "$@";;
+    *)
+        echo "Unknown mode <$mode>" >&2
+        exit 2;;
+esac
