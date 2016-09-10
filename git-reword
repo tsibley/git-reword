@@ -11,7 +11,7 @@ selected for rewording.
 .
 }
 
-function init() {
+function main() {
     commit="$1"
 
     if [[ -z $commit ]]; then
@@ -22,20 +22,16 @@ function init() {
 
     # Normalize commit so we can reliably append "^"
     commit="$(git rev-list -n 1 "$commit")"
-    GIT_SEQUENCE_EDITOR="$0 --filter" exec git rebase --interactive "$commit^"
-}
 
-function filter() {
-    exec perl -pi -e 's/^pick/reword/ if $. == 1' "$@"
+    # Rebase commits starting with our commit of interest (by starting after
+    # its parent).  Our sequence editor command will edit the given file in
+    # place.  The first line is always the commit we want to reword.
+    GIT_SEQUENCE_EDITOR="perl -pi -e 's/^pick/reword/ if \$. == 1'" \
+        exec git rebase --interactive "$commit^"
 }
-
-mode=init
 
 for arg; do
     case "$arg" in
-        --filter)
-            mode=filter
-            shift;;
         -h|--help)
             usage
             exit 0;;
@@ -45,12 +41,4 @@ for arg; do
     esac
 done
 
-case "$mode" in
-    init)
-        init "$@";;
-    filter)
-        filter "$@";;
-    *)
-        echo "Unknown mode <$mode>" >&2
-        exit 2;;
-esac
+main "$@"
