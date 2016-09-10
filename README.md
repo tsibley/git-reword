@@ -20,5 +20,5 @@ You can uninstall just as easily with:
 
 If you need a different install path, specify a prefix:
 
-    make install prefix=$HOME/bin
-    make uninstall prefix=$HOME/bin
+    make install prefix=$HOME
+    make uninstall prefix=$HOME
