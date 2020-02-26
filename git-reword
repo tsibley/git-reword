@@ -26,8 +26,13 @@ function main() {
     # Rebase commits starting with our commit of interest (by starting after
     # its parent).  Our sequence editor command will edit the given file in
     # place.  The first line is always the commit we want to reword.
-    GIT_SEQUENCE_EDITOR="perl -pi -e 's/^pick/reword/ if \$. == 1'" \
-        exec git rebase --interactive "$commit^"
+    export GIT_SEQUENCE_EDITOR="perl -pi -e 's/^pick/reword/ if \$. == 1'"
+
+    if ! git rebase --interactive "$commit^"; then
+        echo >&2
+        echo "Reword failed, commit message unchanged." >&2
+        git rebase --abort
+    fi
 }
 
 for arg; do
